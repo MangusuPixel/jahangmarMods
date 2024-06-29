@@ -20,13 +20,10 @@ using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Characters;
-using StardewValley.Objects;
-using StardewValley.Projectiles;
 using StardewValley.Locations;
 
 using static PetInteraction.PetBehavior;
 using StardewValley.Tools;
-using System;
 
 
 namespace PetInteraction
@@ -41,13 +38,19 @@ namespace PetInteraction
 
         private bool TempRemovedTrashPet = false;
 
-        public static int PetBehaviour = -1;
+        public static string PetBehaviour;
 
-        public static readonly Pet TempPet = new Cat()
-        {
-            Name = "PetInteractionTempCat",
-            displayName = "TempCatDisplay",
-        };
+        public static Pet TempPet {
+            get {
+                if (_tempPet == null)
+                    _tempPet = new Pet(0, 0, "0", "Cat")
+                    {
+                        Name = "PetInteractionTempCat",
+                        displayName = "TempCatDisplay"
+                    };
+                return TempPet;
+            }
+        }
 
         public static bool IsTempPet(Pet pet)
         {
@@ -93,7 +96,7 @@ namespace PetInteraction
 
         void AddPet(string arg1, string[] arg2)
         {
-            Game1.getFarm().characters.Add(new Dog() { Name = "Name", displayName = "displayName" });
+            Game1.getFarm().characters.Add(new Pet() { Name = "Name", displayName = "displayName" });
         }
 
 
@@ -191,7 +194,7 @@ namespace PetInteraction
             //make sure the TestPet was removed
             RemoveTempPetFromFarm();
             //make sure your pet is at the farmhouse
-            if (GetPet() != null && !(Game1.getFarm().characters.Contains(pet) && !(Game1.getLocationFromName(Game1.player.homeLocation).characters.Contains(pet))))
+            if (GetPet() != null && !(Game1.getFarm().characters.Contains(pet) && !(Game1.getLocationFromName(Game1.player.homeLocation.Value).characters.Contains(pet))))
             {
                 WarpPetToFarmhouse(Game1.player);
             }
@@ -220,7 +223,7 @@ namespace PetInteraction
             if (CheckMultiplayer())
                 return;
 
-            if (GetPet() != null && !(Game1.getFarm().characters.Contains(pet) && !(Game1.getLocationFromName(Game1.player.homeLocation).characters.Contains(pet))))
+            if (GetPet() != null && !(Game1.getFarm().characters.Contains(pet) && !(Game1.getLocationFromName(Game1.player.homeLocation.Value).characters.Contains(pet))))
             {
                 pet.warpToFarmHouse(Game1.player);
             }
@@ -390,7 +393,7 @@ namespace PetInteraction
                 {
                     Throw(Game1.player.ActiveObject, e.Cursor.Tile);
                 }
-                else if (Game1.player.CurrentTool is Tool tool && tool != null && PetClicked(pet) && !Game1.player.usingTool)
+                else if (Game1.player.CurrentTool is Tool tool && tool != null && PetClicked(pet) && !Game1.player.UsingTool)
                 {
                     if (tool is Hoe || tool is Axe || tool is Pickaxe || tool is WateringCan)
                     {
@@ -426,7 +429,7 @@ namespace PetInteraction
                     if (PlayerPetDistance() > catch_up_distance && Game1.currentLocation == pet.currentLocation)// && (CurrentPath == null || CurrentPath.Count == 0))
                     {
                         var oldpath = CurrentPath;
-                        var path = PathFinder.CalculatePath(pet, new Vector2(Game1.player.getTileX(), Game1.player.getTileY()));//TODO use player.Position instead?
+                        var path = PathFinder.CalculatePath(pet, new Vector2(Game1.player.Tile.X, Game1.player.Tile.Y));//TODO use player.Position instead?
                         CurrentPath = path;
 
                         if (CurrentPath.Count > 0)
@@ -518,8 +521,8 @@ namespace PetInteraction
                         CatchUp(FacingDirectionBeforeUpdate);
                     }
 
-                    if (petState == PetState.Fetching && CurrentPath.Count == 4 && GetPet() is Cat cat)
-                        cat.leap(null);
+                    if (petState == PetState.Fetching && CurrentPath.Count == 4 && GetPet().petType.Value == "Cat")
+                        GetPet().jump();
 
                     int check_distance = petState == PetState.CatchingUp || petState == PetState.Retrieve ? 4 : 6;
 
@@ -603,7 +606,7 @@ namespace PetInteraction
             if (e.NewLocation.Name == "Temp")
             {
                 Monitor.Log("Pet cannot follow on temporary map. Warping to Farm and unfollow.");
-                WarpPetToFarm();
+                GetPet().WarpToPetBowl();
                 SetState(PetState.Vanilla);
             }
             else if (e.NewLocation is Town
@@ -652,7 +655,7 @@ namespace PetInteraction
 
                 Vector2 petTile = tryTiles.Find(tile => PathFinder.IsPassable(tile, pet));
                 //Log("Player loc: " + new Vector2(Game1.player.getTileX(), Game1.player.getTileY()) + ", horse: " + (Game1.player.isRidingHorse() ? new Vector2(Game1.player.mount.getTileX(), Game1.player.mount.getTileY()).ToString() : ""));
-                if (petTile != null)
+                if (petTile.Equals(Vector2.Zero))
                 {
                     WarpPet(e.NewLocation, petTile);
                     Log("Warped pet to " + petTile);
@@ -663,7 +666,7 @@ namespace PetInteraction
             }
             else if (e.NewLocation is Farm)
             {
-                WarpPetToFarm();
+                pet.WarpToPetBowl();
                 pet.position.X -= 64f;
             }
 
@@ -676,7 +679,7 @@ namespace PetInteraction
                 if (config.show_message_on_warp)
                     Game1.showGlobalMessage(Helper.Translation.Get("warp.todangerous", new { petname = GetPet().displayName }));
             }
-            else if (!e.NewLocation.isOutdoors && e.OldLocation.isOutdoors)
+            else if (!e.NewLocation.IsOutdoors && e.OldLocation.IsOutdoors)
             {
                 if (config.show_message_on_warp && !e.NewLocation.isFarmBuildingInterior() && !(e.NewLocation is FarmCave))
                     Game1.showGlobalMessage(Helper.Translation.Get("warp.waitingoutside", new { petname = GetPet().displayName }));
@@ -714,12 +717,6 @@ namespace PetInteraction
             GetPet().warpToFarmHouse(owner);
         }
 
-        private void WarpPetToFarm()
-        {
-            Point p = Game1.getFarm().GetPetStartLocation();
-            WarpPet(Game1.getFarm(), new Vector2(p.X, p.Y));
-        }
-
         private bool CanUpdatePet() => Context.IsWorldReady && Game1.currentLocation != null && Game1.player.hasPet() && GetPet() != null && Game1.activeClickableMenu == null && !Game1.eventUp;
 
         private static IMonitor _Monitor;
@@ -728,7 +725,6 @@ namespace PetInteraction
         private static IModHelper _Helper;
         public static IModHelper GetHelper() => _Helper;
 
-
-
+        private static Pet _tempPet;
     }
 }
