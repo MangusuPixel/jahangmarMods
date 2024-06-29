@@ -18,8 +18,6 @@ using Microsoft.Xna.Framework;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
 using StardewValley.Characters;
-using StardewValley.GameData.HomeRenovations;
-using StardewValley.Objects;
 using StardewValley.Projectiles;
 using StardewValley.TerrainFeatures;
 
@@ -124,7 +122,7 @@ namespace PetInteraction
         {
             List<Pet> availablePets = new();
 
-            bool check(Character c) => c is Pet p && !ModEntry.IsTempPet(p) && (name == null || p.displayName == name);
+            bool check(Character c) => c is Pet p && (name == null || p.displayName == name);
 
             foreach (Character c in Game1.getFarm().characters)
             {
@@ -179,8 +177,6 @@ namespace PetInteraction
         {
             if (pet == null)
                 pet = FindPet();
-            else
-                ModEntry.TempPet.displayName = pet.displayName;
 
             return pet;
         }
@@ -188,8 +184,6 @@ namespace PetInteraction
         public static void SetPet(Pet pet)
         {
             PetBehavior.pet = pet;
-            if (pet != null)
-                ModEntry.TempPet.displayName = pet.displayName;
         }
 
         public static bool WasPetToday(Pet pet) => pet.lastPetDay.ContainsKey(Game1.player.UniqueMultiplayerID) && pet.lastPetDay[Game1.player.UniqueMultiplayerID] == Game1.Date.TotalDays;

@@ -40,23 +40,6 @@ namespace PetInteraction
 
         public static string PetBehaviour;
 
-        public static Pet TempPet {
-            get {
-                if (_tempPet == null)
-                    _tempPet = new Pet(0, 0, "0", "Cat")
-                    {
-                        Name = "PetInteractionTempCat",
-                        displayName = "TempCatDisplay"
-                    };
-                return TempPet;
-            }
-        }
-
-        public static bool IsTempPet(Pet pet)
-        {
-            return pet == TempPet || pet.Name == TempPet.Name || pet.Name == "TempCat";
-        }
-
         public static Config config;
 
         public static bool debug()
@@ -108,33 +91,6 @@ namespace PetInteraction
                     if (c is Pet p)
                         Log("Found pet (" + p.Name + ") in location " + location.Name);
                 }
-        }
-
-        private void AddTempPetToFarm()
-        {
-            TempPet.currentLocation = Game1.getFarm();
-            if (!Game1.getFarm().characters.Contains(TempPet))
-                Game1.warpCharacter(TempPet, Game1.getFarm(), new Vector2(0, 0));
-            //Log("Adding TempPet");
-        }
-
-        private void RemoveTempPetFromFarm()
-        {
-            if (Game1.getFarm().characters.Contains(TempPet))
-                Game1.getFarm().characters.Remove(TempPet);
-            //Log("Removing TempPet");
-
-            foreach (GameLocation location in Game1.locations)
-            {
-                for (int i = location.characters.Count - 1; i >= 0; i--)
-                {
-                    if (location.characters[i] is Pet p && IsTempPet(p))
-                    {
-                        Monitor.Log("Found temporary pet that should not be there (" + location.Name + "). Fixed it.", LogLevel.Trace);
-                        location.characters.RemoveAt(i);
-                    }
-                }
-            }
         }
 
         private class Comparer : IComparer<Vector2>
@@ -191,8 +147,6 @@ namespace PetInteraction
             if (Game1.IsClient)
                 return;
 
-            //make sure the TestPet was removed
-            RemoveTempPetFromFarm();
             //make sure your pet is at the farmhouse
             if (GetPet() != null && !(Game1.getFarm().characters.Contains(pet) && !(Game1.getLocationFromName(Game1.player.homeLocation.Value).characters.Contains(pet))))
             {
@@ -571,15 +525,6 @@ namespace PetInteraction
             if (GetPet() == null)
                 return;
 
-            if (e.NewLocation is Farm || e.NewLocation is FarmHouse)
-            {
-                RemoveTempPetFromFarm();
-            }
-            else
-            {
-                AddTempPetToFarm();
-            }
-
             if (petState == PetState.Vanilla)
                 return;
 
@@ -724,7 +669,5 @@ namespace PetInteraction
 
         private static IModHelper _Helper;
         public static IModHelper GetHelper() => _Helper;
-
-        private static Pet _tempPet;
     }
 }
