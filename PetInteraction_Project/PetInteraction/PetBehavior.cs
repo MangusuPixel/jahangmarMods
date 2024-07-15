@@ -262,9 +262,9 @@ namespace PetInteraction
 
                 foreach (Vector2 key in Utility.getListOfTileLocationsForBordersOfNonTileRectangle(boundingBox))
                 {
-                    if (location.terrainFeatures.TryGetValue(key, out TerrainFeature terrainFeature1) && !terrainFeature1.isPassable(null))
+                    if (location.terrainFeatures.TryGetValue(key, out TerrainFeature feature) && !feature.isPassable(null))
                     {
-                        terrainFeature = terrainFeature1;
+                        terrainFeature = feature;
                         return true;
                     }
                 }
