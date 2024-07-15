@@ -269,9 +269,7 @@ namespace PetInteraction
                     }
                 }
 
-                bool reachedMaxRange = travelDistance > ModEntry.config.stick_range * Game1.tileSize;
-
-                return reachedMaxRange || location.isCollidingPosition(boundingBox, Game1.viewport, false, 0, false, null, false, false, true);
+                return travelTime > ModEntry.config.stick_timeout * 1000 || location.isCollidingPosition(boundingBox, Game1.viewport, false, 0, false, null, false, false, true);
             }
 
             static void HandleonCollisionBehavior(GameLocation location, int xPosition, int yPosition, Character who)
