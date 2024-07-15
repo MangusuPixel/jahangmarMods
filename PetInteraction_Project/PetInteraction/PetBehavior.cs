@@ -406,10 +406,8 @@ namespace PetInteraction
             GetPet();
             if (pet == null)
                 return;
-            if (pet.petType.Value == "Dog" && (petState == PetState.Chasing || petState == PetState.Fetching))
-                SetPetBehavior(Pet.behavior_Sprint);
-            else
-                SetPetBehavior(Pet.behavior_Walk);
+
+            SetPetBehavior(Pet.behavior_Walk);
 
             pet.FacingDirection = oldFacingDir;
 
